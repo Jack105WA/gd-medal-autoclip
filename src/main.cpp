@@ -1,105 +1,95 @@
+#define NOMINMAX
+#include <Windows.h>
+
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
-#include <Geode/utils/async.hpp>
-#include <Geode/utils/web.hpp>
 
 #include <algorithm>
 #include <chrono>
+#include <cctype>
 #include <string>
+#include <thread>
 
 using namespace geode::prelude;
 
 namespace {
-    constexpr auto MEDAL_EVENT_URL = "http://localhost:12665/api/v1/event/invoke";
+    WORD parseHotkey(std::string value) {
+        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
+            return static_cast<char>(std::toupper(c));
+        });
 
-    std::string replaceToken(std::string value, std::string const& token, std::string const& replacement) {
-        size_t position = 0;
-        while ((position = value.find(token, position)) != std::string::npos) {
-            value.replace(position, token.size(), replacement);
-            position += replacement.size();
+        if (value.size() >= 2 && value[0] == 'F') {
+            try {
+                auto number = std::stoi(value.substr(1));
+                if (number >= 1 && number <= 24) {
+                    return static_cast<WORD>(0x70 + number - 1);
+                }
+            } catch (...) {}
         }
-        return value;
+
+        if (value.size() == 1) {
+            const char c = value[0];
+            if (c >= 'A' && c <= 'Z') return static_cast<WORD>(c);
+            if (c >= '0' && c <= '9') return static_cast<WORD>(c);
+        }
+
+        if (value == "SPACE") return VK_SPACE;
+        if (value == "TAB") return VK_TAB;
+        if (value == "ENTER") return VK_RETURN;
+        if (value == "RETURN") return VK_RETURN;
+        if (value == "PAUSE") return VK_PAUSE;
+        if (value == "INSERT") return VK_INSERT;
+        if (value == "DELETE") return VK_DELETE;
+        if (value == "HOME") return VK_HOME;
+        if (value == "END") return VK_END;
+        if (value == "PAGEUP") return VK_PRIOR;
+        if (value == "PAGEDOWN") return VK_NEXT;
+
+        return VK_F8;
     }
 
-    std::string getClipName(std::string value, std::string const& token, std::string const& replacement) {
-        return replaceToken(std::move(value), token, replacement);
-    }
-
-    void sendMedalEvent(std::string const& eventID, std::string const& eventName) {
+    void pressMedalHotkey(std::string const& eventName) {
         auto mod = Mod::get();
-        auto publicKey = mod->getSettingValue<std::string>("public-key");
-
-        if (publicKey.empty() || eventID.empty()) {
-            log::warn("Medal AutoClip: configure a Medal public key and event ID in the mod settings.");
-            return;
-        }
-
-        auto duration = static_cast<int>(mod->getSettingValue<int64_t>("clip-duration"));
+        auto hotkeyName = mod->getSettingValue<std::string>("clip-hotkey");
         auto delay = static_cast<int>(mod->getSettingValue<int64_t>("capture-delay"));
-        duration = std::clamp(duration, 5, 120);
+        const WORD virtualKey = parseHotkey(hotkeyName);
         delay = std::clamp(delay, 0, 60000);
 
-        matjson::Value payload = matjson::Value::object();
-        payload["eventId"] = eventID;
-        payload["eventName"] = eventName;
-        payload["triggerActions"] = matjson::Value::array();
-        payload["triggerActions"].push("SaveClip");
-        payload["clipOptions"] = matjson::Value::object();
-        payload["clipOptions"]["duration"] = duration;
-        payload["clipOptions"]["captureDelayMs"] = delay;
+        log::info("Medal AutoClip: '{}' detected. Sending {} hotkey in {} ms.",
+            eventName, hotkeyName, delay);
 
-        log::info("Medal AutoClip: requesting '{}' (event {}).", eventName, eventID);
+        std::thread([virtualKey, delay, eventName]() {
+            if (delay > 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+            }
 
-        auto request = web::WebRequest()
-            .header("Content-Type", "application/json; charset=utf-8")
-            .header("publicKey", publicKey)
-            .bodyJSON(payload)
-            .timeout(std::chrono::seconds(8))
-            .post(MEDAL_EVENT_URL);
+            INPUT inputs[2]{};
+            inputs[0].type = INPUT_KEYBOARD;
+            inputs[0].ki.wVk = virtualKey;
 
-        async::spawn(std::move(request), [eventName](web::WebResponse response) {
-            if (!response.ok()) {
-                auto body = response.string();
-                if (body) {
-                    log::error("Medal AutoClip: request failed with HTTP {}: {}", response.code(), body.unwrap());
-                } else {
-                    log::error("Medal AutoClip: request failed with HTTP {}: {}", response.code(), response.errorMessage());
-                }
+            inputs[1].type = INPUT_KEYBOARD;
+            inputs[1].ki.wVk = virtualKey;
+            inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+
+            const auto sent = SendInput(2, inputs, sizeof(INPUT));
+            if (sent != 2) {
+                log::error(
+                    "Medal AutoClip: Windows could not send the clip hotkey for '{}'. "
+                    "Check that Medal is running at the same privilege level.",
+                    eventName
+                );
                 return;
             }
 
-            auto json = response.json();
-            if (!json) {
-                log::warn("Medal AutoClip: Medal returned an unreadable response (HTTP {}).", response.code());
-                return;
-            }
-
-            auto errorCode = json.unwrap().get("errorCode");
-            if (errorCode) {
-                log::warn("Medal AutoClip: Medal returned an API error for '{}'. Check the response and Medal Auto Clipping settings.", eventName);
-                return;
-            }
-
-            log::info("Medal AutoClip: Medal accepted event '{}'.", eventName);
-        });
-    }
-
-    std::string levelName(PlayLayer* layer) {
-        if (!layer || !layer->m_level) {
-            return "Unknown Level";
-        }
-        auto name = layer->m_level->m_levelName;
-        if (name.empty()) {
-            return "Unknown Level";
-        }
-        return name;
+            log::info("Medal AutoClip: sent clip hotkey for '{}'.", eventName);
+        }).detach();
     }
 }
 
 class $modify(MedalAutoClipPlayLayer, PlayLayer) {
     struct Fields {
-        int highestPercent = 0;
         bool newBestSent = false;
+        bool completionSent = false;
     };
 
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
@@ -107,21 +97,21 @@ class $modify(MedalAutoClipPlayLayer, PlayLayer) {
             return false;
         }
 
-        m_fields->highestPercent = 0;
         m_fields->newBestSent = false;
+        m_fields->completionSent = false;
         return true;
     }
 
     void resetLevel() {
         PlayLayer::resetLevel();
-        m_fields->highestPercent = 0;
         m_fields->newBestSent = false;
+        m_fields->completionSent = false;
     }
 
     void update(float dt) {
         PlayLayer::update(dt);
 
-        if (!m_level || m_fields->newBestSent || m_isPracticeMode) {
+        if (!m_level || m_isPracticeMode || m_fields->newBestSent) {
             return;
         }
 
@@ -130,35 +120,24 @@ class $modify(MedalAutoClipPlayLayer, PlayLayer) {
             return;
         }
 
-        int percent = this->getCurrentPercent();
-        m_fields->highestPercent = std::max(m_fields->highestPercent, percent);
-
+        const int percent = this->getCurrentPercent();
         if (percent > m_level->m_normalPercent) {
             m_fields->newBestSent = true;
-
-            auto name = getClipName(
-                mod->getSettingValue<std::string>("new-best-name"),
-                "{percent}",
-                std::to_string(percent)
-            );
-
-            auto eventID = mod->getSettingValue<std::string>("new-best-event-id");
-            sendMedalEvent(eventID, name);
+            pressMedalHotkey("New Best - " + std::to_string(percent) + "%");
         }
     }
 
     void levelComplete() {
         auto mod = Mod::get();
 
-        if (!m_isPracticeMode && mod->getSettingValue<bool>("enable-completions")) {
-            auto name = getClipName(
-                mod->getSettingValue<std::string>("completion-name"),
-                "{level}",
-                levelName(this)
-            );
-
-            auto eventID = mod->getSettingValue<std::string>("completion-event-id");
-            sendMedalEvent(eventID, name);
+        if (!m_isPracticeMode &&
+            !m_fields->completionSent &&
+            mod->getSettingValue<bool>("enable-completions")) {
+            m_fields->completionSent = true;
+            auto name = m_level && !m_level->m_levelName.empty()
+                ? m_level->m_levelName
+                : std::string("Unknown Level");
+            pressMedalHotkey("Level Complete - " + name);
         }
 
         PlayLayer::levelComplete();
