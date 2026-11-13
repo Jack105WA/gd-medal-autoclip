@@ -5,32 +5,10 @@
   },
   "id": "jack105wa.medal-autoclip",
   "name": "GD Medal AutoClip",
-  "version": "v1.0.0",
+  "version": "v1.1.0",
   "developer": "Jack105WA",
-  "description": "Automatically requests Medal clips for Geometry Dash new bests and level completions.",
+  "description": "Automatically triggers Medal's clip hotkey for Geometry Dash new bests and level completions.",
   "settings": {
-    "connection-title": {
-      "type": "title",
-      "name": "Medal Connection"
-    },
-    "public-key": {
-      "type": "string",
-      "name": "Medal Public Key",
-      "description": "Public key from the Medal Developer Portal. Required for event requests.",
-      "default": ""
-    },
-    "new-best-event-id": {
-      "type": "string",
-      "name": "New Best Event ID",
-      "description": "Event ID created in the Medal Developer Portal for new bests.",
-      "default": "1"
-    },
-    "completion-event-id": {
-      "type": "string",
-      "name": "Level Complete Event ID",
-      "description": "Event ID created in the Medal Developer Portal for level completions.",
-      "default": "2"
-    },
     "events-title": {
       "type": "title",
       "name": "Automatic Events"
@@ -45,34 +23,21 @@
       "name": "Clip Level Completions",
       "default": true
     },
-    "new-best-name": {
-      "type": "string",
-      "name": "New Best Clip Name",
-      "description": "Use {percent} for the achieved percentage.",
-      "default": "New Best - {percent}%"
-    },
-    "completion-name": {
-      "type": "string",
-      "name": "Completion Clip Name",
-      "description": "Use {level} for the level name.",
-      "default": "Level Complete - {level}"
-    },
-    "clip-title": {
+    "hotkey-title": {
       "type": "title",
-      "name": "Clip Timing"
+      "name": "Medal Hotkey"
     },
-    "clip-duration": {
-      "type": "int",
-      "name": "Clip Duration (seconds)",
-      "default": 30,
-      "min": 5,
-      "max": 120
+    "clip-hotkey": {
+      "type": "string",
+      "name": "Medal Clip Hotkey",
+      "description": "The global Medal hotkey to press. Defaults to F8. Supports F1-F24, A-Z, 0-9, SPACE, TAB, ENTER, INSERT, DELETE, HOME, END, PAGEUP and PAGEDOWN.",
+      "default": "F8"
     },
     "capture-delay": {
       "type": "int",
       "name": "Capture Delay (milliseconds)",
-      "description": "Wait after the event before Medal saves the clip. 15000 ms gives 15 seconds after the event.",
-      "default": 15000,
+      "description": "Wait this long after detecting the event before pressing Medal's clip hotkey.",
+      "default": 0,
       "min": 0,
       "max": 60000
     }
