@@ -9,7 +9,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 if (WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE user32)
+    target_link_libraries(${PROJECT_NAME} user32)
 endif()
 
 if (NOT DEFINED ENV{GEODE_SDK})
