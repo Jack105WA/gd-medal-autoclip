@@ -1,0 +1,80 @@
+{
+  "geode": "5.11.2",
+  "gd": {
+    "win": "2.2081"
+  },
+  "id": "jack105wa.medal-autoclip",
+  "name": "GD Medal AutoClip",
+  "version": "v1.0.0",
+  "developer": "Jack105WA",
+  "description": "Automatically requests Medal clips for Geometry Dash new bests and level completions.",
+  "settings": {
+    "connection-title": {
+      "type": "title",
+      "name": "Medal Connection"
+    },
+    "public-key": {
+      "type": "string",
+      "name": "Medal Public Key",
+      "description": "Public key from the Medal Developer Portal. Required for event requests.",
+      "default": ""
+    },
+    "new-best-event-id": {
+      "type": "string",
+      "name": "New Best Event ID",
+      "description": "Event ID created in the Medal Developer Portal for new bests.",
+      "default": "1"
+    },
+    "completion-event-id": {
+      "type": "string",
+      "name": "Level Complete Event ID",
+      "description": "Event ID created in the Medal Developer Portal for level completions.",
+      "default": "2"
+    },
+    "events-title": {
+      "type": "title",
+      "name": "Automatic Events"
+    },
+    "enable-new-bests": {
+      "type": "bool",
+      "name": "Clip New Bests",
+      "default": true
+    },
+    "enable-completions": {
+      "type": "bool",
+      "name": "Clip Level Completions",
+      "default": true
+    },
+    "new-best-name": {
+      "type": "string",
+      "name": "New Best Clip Name",
+      "description": "Use {percent} for the achieved percentage.",
+      "default": "New Best - {percent}%"
+    },
+    "completion-name": {
+      "type": "string",
+      "name": "Completion Clip Name",
+      "description": "Use {level} for the level name.",
+      "default": "Level Complete - {level}"
+    },
+    "clip-title": {
+      "type": "title",
+      "name": "Clip Timing"
+    },
+    "clip-duration": {
+      "type": "int",
+      "name": "Clip Duration (seconds)",
+      "default": 30,
+      "min": 5,
+      "max": 120
+    },
+    "capture-delay": {
+      "type": "int",
+      "name": "Capture Delay (milliseconds)",
+      "description": "Wait after the event before Medal saves the clip. 15000 ms gives 15 seconds after the event.",
+      "default": 15000,
+      "min": 0,
+      "max": 60000
+    }
+  }
+}
