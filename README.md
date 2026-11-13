@@ -1,56 +1,62 @@
 # GD Medal AutoClip
 
-A Windows Geode mod for Geometry Dash 2.2081 that sends gameplay events to Medal's local Auto Clipping API.
+A Windows Geode mod for Geometry Dash 2.2081. It detects new bests and level completions, then presses Medal's configured clip hotkey automatically.
 
 ## Features
 
 - Detects new best percentages during normal gameplay.
 - Detects completed levels.
-- Requests Medal clips through `http://localhost:12665/api/v1/event/invoke`.
-- Configurable event IDs, clip names, duration, and capture delay.
+- Triggers Medal's regular clip hotkey (F8 by default).
+- No Developer Portal, API key, event IDs, or custom integration required.
 - Separate toggles for new-best and completion clips.
+- Configurable Medal hotkey and capture delay.
 - Builds a Windows x64 `.geode` package through GitHub Actions.
 
 ## Requirements
 
 - Geometry Dash 2.2081
-- Geode built for Geometry Dash 2.2081
-- Medal running on the same PC
-- A Medal Developer Portal public key and registered event IDs
+- Geode for Geometry Dash 2.2081
+- Medal for Windows, running and recording
+- Medal's clip hotkey configured and working
 
-## Medal setup
+## Setup
 
-1. Open the [Medal Developer Portal](https://medal.tv/portal).
-2. Create an Auto Clipping integration and register two events: one for new bests and one for level completions.
-3. Copy the integration's public key.
-4. In Geometry Dash, open Geode, select **GD Medal AutoClip**, and open its settings.
-5. Paste the public key and enter the corresponding event IDs.
-6. Enable the event types you want to clip.
-7. Configure the clip name, duration, and capture delay.
+1. Install and launch Medal.
+2. Open Medal Settings and find the hotkey used to save a clip. Medal uses F8 by default; change it in Medal if you prefer another key.
+3. Make sure Medal is recording and that its clip hotkey saves a clip when pressed.
+4. Install **GD Medal AutoClip** through Geode.
+5. Open the mod settings in Geode.
+6. Enable **Clip New Bests** and/or **Clip Level Completions**.
+7. Set **Medal Clip Hotkey** to the same key configured in Medal. The default is `F8`.
+8. Optionally configure **Capture Delay**.
 
-Medal must be running and Auto Clipping must be enabled for the registered events. Medal may accept an event without actually scheduling a clip if the game/event is inactive or disabled.
+## Settings
 
-## Clip naming
+| Setting | Default | Description |
+|---|---:|---|
+| Clip New Bests | On | Triggers when normal-mode progress exceeds the saved normal record |
+| Clip Level Completions | On | Triggers when a level is completed in normal mode |
+| Medal Clip Hotkey | F8 | Key sent to Medal to save the clip |
+| Capture Delay | 0 ms | Delay between detecting the event and sending the hotkey |
 
-The default names are:
+Supported hotkey names include `F1`–`F24`, letters, digits, `SPACE`, `TAB`, `ENTER`, `INSERT`, `DELETE`, `HOME`, `END`, `PAGEUP`, and `PAGEDOWN`. An unrecognized value falls back to F8.
 
-- `New Best - {percent}%`
-- `Level Complete - {level}`
+## Important limitations
 
-The placeholders are replaced by the mod before the request is sent.
+This version uses Medal's normal clip hotkey instead of Medal's Auto Clipping event API. Medal's documented local event endpoint requires a Developer Portal public key and registered event ID, so it cannot be used as a portal-free direct-save endpoint.
+
+Because this mod triggers the ordinary hotkey:
+
+- Clip duration is controlled by Medal's own recording/clip settings, not by this mod.
+- Medal chooses the saved clip's title. The mod cannot set a custom title through the hotkey.
+- New Best and Level Complete events both invoke the same Medal hotkey.
+- Medal must be running, recording, and able to receive the configured global hotkey.
+- The game must not be running elevated while Medal is not, or Windows may block simulated input.
+
+Practice mode is ignored.
 
 ## Build
 
 Every push to `main`, pull request, or manual workflow run builds a Windows x64 package. Open the repository's **Actions** tab and download the `gd-medal-autoclip-windows` artifact.
 
-To publish a GitHub Release, push a version tag such as `v1.0.0`. The workflow attaches the built `.geode` file to the release.
-
-The project uses the Geode SDK version declared in `mod.json` and targets Geometry Dash 2.2081.
-
-## API
-
-The mod uses Medal's documented local endpoint:
-
-`POST http://localhost:12665/api/v1/event/invoke`
-
-See the [Medal Auto Clipping API reference](https://medal.tv/portal/docs/auto-clipping/api) for request fields and response errors.
+To publish a GitHub Release, push a version tag such as `v1.1.0`. The workflow attaches the built `.geode` file to the release.
