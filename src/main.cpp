@@ -4,6 +4,7 @@
 #include <Geode/utils/web.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <string>
 
 using namespace geode::prelude;
@@ -53,7 +54,7 @@ namespace {
             .header("Content-Type", "application/json; charset=utf-8")
             .header("publicKey", publicKey)
             .bodyJSON(payload)
-            .timeout(asp::Duration::fromSecs(8))
+            .timeout(std::chrono::seconds(8))
             .post(MEDAL_EVENT_URL);
 
         async::spawn(std::move(request), [eventName](web::WebResponse response) {
@@ -132,8 +133,6 @@ class $modify(MedalAutoClipPlayLayer, PlayLayer) {
         int percent = this->getCurrentPercent();
         m_fields->highestPercent = std::max(m_fields->highestPercent, percent);
 
-        // m_normalPercent is the saved normal-mode record. Trigger once when
-        // the current attempt passes that record.
         if (percent > m_level->m_normalPercent) {
             m_fields->newBestSent = true;
 
