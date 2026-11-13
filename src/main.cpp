@@ -35,8 +35,7 @@ namespace {
 
         if (value == "SPACE") return VK_SPACE;
         if (value == "TAB") return VK_TAB;
-        if (value == "ENTER") return VK_RETURN;
-        if (value == "RETURN") return VK_RETURN;
+        if (value == "ENTER" || value == "RETURN") return VK_RETURN;
         if (value == "PAUSE") return VK_PAUSE;
         if (value == "INSERT") return VK_INSERT;
         if (value == "DELETE") return VK_DELETE;
@@ -46,6 +45,23 @@ namespace {
         if (value == "PAGEDOWN") return VK_NEXT;
 
         return VK_F8;
+    }
+
+    bool eventFiltersAllowClip(GJGameLevel* level) {
+        auto mod = Mod::get();
+
+        // Geode exposes the safe-mode launch flag through its public Loader API.
+        if (mod->getSettingValue<bool>("only-when-safe-mode-off") &&
+            Loader::get()->getLaunchFlag("safe-mode")) {
+            return false;
+        }
+
+        if (mod->getSettingValue<bool>("rated-levels-only") &&
+            (!level || level->m_stars <= 0)) {
+            return false;
+        }
+
+        return true;
     }
 
     void pressMedalHotkey(std::string const& eventName) {
@@ -116,7 +132,8 @@ class $modify(MedalAutoClipPlayLayer, PlayLayer) {
         }
 
         auto mod = Mod::get();
-        if (!mod->getSettingValue<bool>("enable-new-bests")) {
+        if (!mod->getSettingValue<bool>("enable-new-bests") ||
+            !eventFiltersAllowClip(m_level)) {
             return;
         }
 
@@ -132,7 +149,8 @@ class $modify(MedalAutoClipPlayLayer, PlayLayer) {
 
         if (!m_isPracticeMode &&
             !m_fields->completionSent &&
-            mod->getSettingValue<bool>("enable-completions")) {
+            mod->getSettingValue<bool>("enable-completions") &&
+            eventFiltersAllowClip(m_level)) {
             m_fields->completionSent = true;
             auto name = m_level && !m_level->m_levelName.empty()
                 ? m_level->m_levelName
