@@ -5,7 +5,7 @@
   },
   "id": "jack105wa.medal-autoclip",
   "name": "GD Medal AutoClip",
-  "version": "v1.1.0",
+  "version": "v1.2.0",
   "developer": "Jack105WA",
   "description": "Automatically triggers Medal's clip hotkey for Geometry Dash new bests and level completions.",
   "settings": {
@@ -22,6 +22,22 @@
       "type": "bool",
       "name": "Clip Level Completions",
       "default": true
+    },
+    "filters-title": {
+      "type": "title",
+      "name": "Clip Filters"
+    },
+    "only-when-safe-mode-off": {
+      "type": "bool",
+      "name": "Only Clip When Safe Mode Is Off",
+      "description": "Do not trigger Medal while Geode's safe-mode launch flag is enabled.",
+      "default": true
+    },
+    "rated-levels-only": {
+      "type": "bool",
+      "name": "Rated Levels Only",
+      "description": "Only trigger clips in levels with a star rating. Unrated and platformer levels without stars are skipped.",
+      "default": false
     },
     "hotkey-title": {
       "type": "title",
