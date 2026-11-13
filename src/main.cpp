@@ -120,7 +120,7 @@ class $modify(MedalAutoClipPlayLayer, PlayLayer) {
     void update(float dt) {
         PlayLayer::update(dt);
 
-        if (!m_level || m_fields->newBestSent) {
+        if (!m_level || m_fields->newBestSent || m_isPracticeMode) {
             return;
         }
 
@@ -151,7 +151,7 @@ class $modify(MedalAutoClipPlayLayer, PlayLayer) {
     void levelComplete() {
         auto mod = Mod::get();
 
-        if (mod->getSettingValue<bool>("enable-completions")) {
+        if (!m_isPracticeMode && mod->getSettingValue<bool>("enable-completions")) {
             auto name = getClipName(
                 mod->getSettingValue<std::string>("completion-name"),
                 "{level}",
