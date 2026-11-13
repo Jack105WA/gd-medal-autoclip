@@ -57,9 +57,13 @@ namespace {
             .post(MEDAL_EVENT_URL);
 
         async::spawn(std::move(request), [eventName](web::WebResponse response) {
-            auto body = response.string();
             if (!response.ok()) {
-                log::error("Medal AutoClip: request failed with HTTP {}: {}", response.code(), body ? body.unwrap() : response.errorMessage());
+                auto body = response.string();
+                if (body) {
+                    log::error("Medal AutoClip: request failed with HTTP {}: {}", response.code(), body.unwrap());
+                } else {
+                    log::error("Medal AutoClip: request failed with HTTP {}: {}", response.code(), response.errorMessage());
+                }
                 return;
             }
 
@@ -70,8 +74,8 @@ namespace {
             }
 
             auto errorCode = json.unwrap().get("errorCode");
-            if (errorCode && errorCode.unwrap().isString()) {
-                log::warn("Medal AutoClip: Medal rejected '{}': {}", eventName, errorCode.unwrap().asString().unwrapOr("unknown error"));
+            if (errorCode) {
+                log::warn("Medal AutoClip: Medal returned an API error for '{}'. Check the response and Medal Auto Clipping settings.", eventName);
                 return;
             }
 
@@ -105,6 +109,12 @@ class $modify(MedalAutoClipPlayLayer, PlayLayer) {
         m_fields->highestPercent = 0;
         m_fields->newBestSent = false;
         return true;
+    }
+
+    void resetLevel() {
+        PlayLayer::resetLevel();
+        m_fields->highestPercent = 0;
+        m_fields->newBestSent = false;
     }
 
     void update(float dt) {
